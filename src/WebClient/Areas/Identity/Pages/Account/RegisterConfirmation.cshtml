@@ -1,0 +1,23 @@
+﻿@page
+@model RegisterConfirmationModel
+@{
+    ViewData["Title"] = "登録メール確認";
+}
+
+<h1>@ViewData["Title"]</h1>
+@{
+    if (@Model.DisplayConfirmAccountLink)
+    {
+        <p>
+            ダミープロジェクトのため、メールを送信できません。下のメール確認リンクをクリックしてください。
+            <a id="confirm-link" href="@Model.EmailConfirmationUrl">メール確認リンク</a>
+        </p>
+    }
+    else
+    {
+        <p>
+            Please check your email to confirm your account.
+        </p>
+    }
+}
+

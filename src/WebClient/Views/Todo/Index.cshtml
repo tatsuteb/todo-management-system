@@ -1,0 +1,199 @@
+﻿@using Domain.Models.Todos
+@model WebClient.Models.Todos.TodoViewModel
+
+@if (!string.IsNullOrWhiteSpace(Model?.ErrorMessage))
+{
+    <div class="alert alert-danger d-flex align-items-center alert-dismissible fade show" role="alert">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-exclamation-octagon-fill" viewBox="0 0 16 16">
+            <path d="M11.46.146A.5.5 0 0 0 11.107 0H4.893a.5.5 0 0 0-.353.146L.146 4.54A.5.5 0 0 0 0 4.893v6.214a.5.5 0 0 0 .146.353l4.394 4.394a.5.5 0 0 0 .353.146h6.214a.5.5 0 0 0 .353-.146l4.394-4.394a.5.5 0 0 0 .146-.353V4.893a.5.5 0 0 0-.146-.353L11.46.146zM8 4c.535 0 .954.462.9.995l-.35 3.507a.552.552 0 0 1-1.1 0L7.1 4.995A.905.905 0 0 1 8 4zm.002 6a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
+        </svg>
+        <div class="mx-1">@Model.ErrorMessage</div>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="d-flex mt-5">
+    <div style="width: 200px;">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">フィルター</h6>
+
+                <form asp-action="Index" method="get">
+                    @if (!string.IsNullOrWhiteSpace(Model?.Keyword))
+                    {
+                        <input type="hidden" asp-for="Keyword" value="@Model?.Keyword" />
+                    }
+
+                    <div class="form-check">
+                        <input type="checkbox" id="statusFilterIncomplete" name="@nameof(Model.IsIncompleted)" class="form-check-input" value="true" @((Model?.IsIncompleted ?? false) ? "checked=checked" : "")/>
+                        <label class="form-check-label" for="statusFilterIncomplete">未完了</label>
+                    </div>
+                    <div class="form-check">
+                        <input type="checkbox" id="statusFilterComplete" name="@nameof(Model.IsCompleted)" class="form-check-input" value="true" @((Model?.IsCompleted ?? false) ? "checked=checked" : "")/>
+                        <label class="form-check-label" for="statusFilterComplete">完了</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">適用</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mx-3" style="width: 600px;">
+        @if (Model is null || !Model.Summaries.Any())
+        {
+            <div>TODOが見つかりません</div>
+        }
+        else
+        {
+            <table class="table table-hover">
+                <thead>
+                <tr>
+                    <th scope="col">完了</th>
+                    <th scope="col">タイトル</th>
+                    <th scope="col">ステータス</th>
+                </tr>
+                </thead>
+                <tbody>
+                @foreach (var todoSummary in Model.Summaries)
+                {
+                    var isSummaryComplete = todoSummary.StatusString == TodoStatus.完了.ToString();
+                    <tr class="@(Model.Id == todoSummary.Id ? "table-active" : "")">
+                        <th scope="row">
+                            <form id="completeTodoForm_@todoSummary.Id" asp-action="ChangeStatus" method="post">
+                                <input type="hidden" asp-for="CompleteInputModel.TodoId" value="@todoSummary.Id"/>
+                                @if (!string.IsNullOrWhiteSpace(Model.Keyword))
+                                {
+                                    <input type="hidden" asp-for="Keyword" value="@Model.Keyword" />
+                                }
+                                @if (Model.IsIncompleted)
+                                {
+                                    <input type="hidden" asp-for="IsIncompleted" value="true" />
+                                }
+                                @if (Model.IsCompleted)
+                                {
+                                    <input type="hidden" asp-for="IsCompleted" value="true" />
+                                }
+                                @if (isSummaryComplete)
+                                {
+                                    <input type="hidden" asp-for="CompleteInputModel.Status" value="@((int)TodoStatus.未完了)"/>
+                                }
+                                else
+                                {
+                                    <input type="hidden" asp-for="CompleteInputModel.Status" value="@((int)TodoStatus.完了)"/>
+                                }
+                                <input type="checkbox" asp-for="CompleteInputModel.IsComplete" checked="@isSummaryComplete" data-form="completeTodoForm_@todoSummary.Id"/>
+                            </form>
+                        </th>
+                        <td>
+                            @{
+                                var allData = new Dictionary<string, string>
+                                {
+                                    { nameof(Model.Id), todoSummary.Id }
+                                };
+                                if (!string.IsNullOrWhiteSpace(Model.Keyword))
+                                {
+                                    allData.Add(nameof(Model.Keyword), Model.Keyword);
+                                }
+                                if (Model.IsIncompleted)
+                                {
+                                    allData.Add(nameof(Model.IsIncompleted), "true");
+                                }
+                                if (Model.IsCompleted)
+                                {
+                                    allData.Add(nameof(Model.IsCompleted), "true");
+                                }
+                            }
+                            <a asp-action="Index" asp-all-route-data="@allData" class="link-dark text-decoration-none">@todoSummary.Title</a>
+                        </td>
+                        <td>
+                            <span class="badge rounded-pill @(isSummaryComplete ? "bg-success" : "bg-warning text-dark")">@todoSummary.StatusString</span>
+                        </td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        }
+    </div>
+    
+    <div style="width: 350px;">
+        <form id="todoForm" asp-action="Post" method="post">
+            <div class="form-floating mb-3">
+                <input asp-for="PostInputModel.Title" class="form-control" placeholder="TODOのタイトルを入力してください" />
+                <label asp-for="PostInputModel.Title">タイトル</label>
+            </div>
+
+            <div class="form-floating mb-3">
+                <textarea asp-for="PostInputModel.Description" class="form-control" placeholder="TODOの詳細を入力してください。"></textarea>
+                <label asp-for="PostInputModel.Description">詳細</label>
+            </div>
+            
+            @if (!string.IsNullOrWhiteSpace(Model?.Id))
+            {
+                <input type="hidden" asp-for="Id" value="@Model.Id" />
+                var isComplete = Model?.TodoGetViewModel.StatusString == TodoStatus.完了.ToString();
+
+                <div class="mb-3"><span class="badge rounded-pill @(isComplete ? "bg-success" : "bg-warning text-dark")">@(!string.IsNullOrWhiteSpace(Model?.Id) ? Model.TodoGetViewModel.StatusString : "未完了")</span></div>
+
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="createdDataTime" value="@(!string.IsNullOrWhiteSpace(Model?.Id) ? Model.TodoGetViewModel.CreatedDateTime : "")" readonly="readonly">
+                    <label for="createdDataTime">作成日時</label>
+                </div>
+            }
+        </form>
+
+        <div class="d-flex justify-content-between mt-3">
+            @if (!string.IsNullOrWhiteSpace(Model?.Id))
+            {
+                <form asp-action="Delete" method="post">
+                    <input type="hidden" asp-for="Id" />
+
+                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">削除</button>
+
+                    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deleteModalLabel">TODO削除</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    選択したTODOを削除しますか？
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                                    <button type="submit" class="btn btn-primary">削除</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            }
+            else
+            {
+                <button type="button" class="btn btn-outline-secondary" disabled="disabled">削除</button>
+            }
+
+            <button type="submit" form="todoForm" class="btn btn-primary">@(!string.IsNullOrWhiteSpace(Model?.Id) ? "更新" : "作成")</button>
+        </div>
+    </div>
+</div>
+
+@section Scripts
+{
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const completeTodoInputs = document.getElementsByName("CompleteInputModel.IsComplete");
+            completeTodoInputs.forEach(element => {
+                element.addEventListener("change",
+                    () => {
+                        const form = document.getElementById(element.dataset.form);
+                        
+                        if (form === undefined || form === null) return;
+
+                        form.submit();
+                    });
+            });
+        });
+    </script>
+}

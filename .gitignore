@@ -1,0 +1,13 @@
+/src/.vs
+/src/Domain/bin
+/src/Domain/obj
+/src/Infrastructure/bin
+/src/Infrastructure/obj
+/src/Test/bin
+/src/Test/obj
+/src/UseCase/bin
+/src/UseCase/obj
+/src/WebClient/bin
+/src/WebClient/obj
+/src/bin
+/src/obj

@@ -1,0 +1,75 @@
+﻿@using Microsoft.AspNetCore.Identity
+@using UseCase.Shared
+@using UseCase.Users.GetSignInInfo
+@using WebClient.Models.Todos
+@inject SignInManager<IdentityUser> _signInManager
+@inject UserManager<IdentityUser> _userManager
+@inject IUserGetSignInInfoQueryService _userGetSignInInfoQueryService
+@{
+    var userId = _signInManager.IsSignedIn(User)
+        ? _userManager.GetUserId(User)
+        : null;
+    var result = userId != null 
+        ? await _userGetSignInInfoQueryService.ExecuteAsync(
+            command: new UserGetSignInInfoCommand(
+                userSession: new UserSession(userId))) 
+        : null;
+
+    var nickname = result?.SignInInfo?.Nickname;
+}
+
+@if (_signInManager.IsSignedIn(User))
+{
+    <form asp-controller="Todo" asp-action="Index" method="get">
+        @{
+            var query = Url.ActionContext.HttpContext.Request.Query;
+
+            var isIncompleted = query["isIncompleted"].ToString();
+            var isCompleted = query["isCompleted"].ToString();
+            var keyword = query["keyword"].ToString();
+        }
+
+        <div class="input-group">
+            @if (!string.IsNullOrWhiteSpace(isIncompleted) && isIncompleted.ToLower() == "true")
+            {
+                <input type="hidden" name="@nameof(TodoViewModel.IsIncompleted)" value="@isIncompleted"/>
+            }
+            
+            @if (!string.IsNullOrWhiteSpace(isCompleted) && isCompleted.ToLower() == "true")
+            {
+                <input type="hidden" name="@nameof(TodoViewModel.IsCompleted)" value="@isCompleted"/>
+            }
+            
+            <input class="form-control" name="@nameof(TodoViewModel.Keyword)" value="@keyword" placeholder="キーワードを入力してください" aria-label="Keyword" aria-describedby="searchButton">
+            <button type="submit" id="searchButton" class="btn btn-outline-secondary">検索</button>
+        </div>
+    </form>
+}
+
+<ul class="navbar-nav">
+@if (_signInManager.IsSignedIn(User))
+{
+    <li class="nav-item">
+        <a class="btn btn-outline-primary" asp-controller="Todo" asp-action="Index" title="Manage">
+            <i class="bi bi-plus"></i>TODOを作成
+        </a>
+    </li>
+    <li class="nav-item">
+        <a  class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">@nickname</a>
+    </li>
+    <li class="nav-item">
+        <form  class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+            <button  type="submit" class="nav-link btn btn-link text-dark">ログアウト</button>
+        </form>
+    </li>
+}
+else
+{
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Register">新規ユーザー登録</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Login">ログイン</a>
+    </li>
+}
+</ul>
