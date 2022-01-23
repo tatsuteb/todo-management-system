@@ -18,49 +18,64 @@
     var nickname = result?.SignInInfo?.Nickname;
 }
 
-@if (_signInManager.IsSignedIn(User))
-{
-    <form asp-controller="Todo" asp-action="Index" method="get">
-        @{
-            var query = Url.ActionContext.HttpContext.Request.Query;
-
-            var isIncompleted = query["isIncompleted"].ToString();
-            var isCompleted = query["isCompleted"].ToString();
-            var keyword = query["keyword"].ToString();
-        }
-
-        <div class="input-group">
-            @if (!string.IsNullOrWhiteSpace(isIncompleted) && isIncompleted.ToLower() == "true")
-            {
-                <input type="hidden" name="@nameof(TodoViewModel.IsIncompleted)" value="@isIncompleted"/>
-            }
-            
-            @if (!string.IsNullOrWhiteSpace(isCompleted) && isCompleted.ToLower() == "true")
-            {
-                <input type="hidden" name="@nameof(TodoViewModel.IsCompleted)" value="@isCompleted"/>
-            }
-            
-            <input class="form-control" name="@nameof(TodoViewModel.Keyword)" value="@keyword" placeholder="キーワードを入力してください" aria-label="Keyword" aria-describedby="searchButton">
-            <button type="submit" id="searchButton" class="btn btn-outline-secondary">検索</button>
-        </div>
-    </form>
-}
-
 <ul class="navbar-nav">
 @if (_signInManager.IsSignedIn(User))
 {
     <li class="nav-item">
-        <a class="btn btn-outline-primary" asp-controller="Todo" asp-action="Index" title="Manage">
-            <i class="bi bi-plus"></i>TODOを作成
-        </a>
-    </li>
-    <li class="nav-item">
-        <a  class="nav-link text-dark" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">@nickname</a>
-    </li>
-    <li class="nav-item">
-        <form  class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
-            <button  type="submit" class="nav-link btn btn-link text-dark">ログアウト</button>
+        <form asp-controller="Todo" asp-action="Index" method="get">
+            <div class="input-group">
+                @{
+                    var queries = Context.Request.Query.ToDictionary(
+                        x => x.Key,
+                        x => x.Value.ToString());
+
+                    if (queries.ContainsKey(nameof(TodoViewModel.PageNum)))
+                    {
+                        queries[nameof(TodoViewModel.PageNum)] = "1";
+                    }
+                    else
+                    {
+                        queries.Add(nameof(TodoViewModel.PageNum), "1");
+                    }
+
+                    var keyword = queries.ContainsKey(nameof(TodoViewModel.Keyword)) ? queries[nameof(TodoViewModel.Keyword)] : "";
+
+                    queries.Remove("PostInputModel");
+                    queries.Remove("CompleteInputModel");
+                    queries.Remove("TodoDetailsViewModel");
+
+                    queries.Remove(nameof(TodoViewModel.Keyword));
+
+                    foreach (var (key, value) in queries)
+                    {
+                        <input type="hidden" name="@key" value="@value" />
+                    }
+                }
+                <input type="search" name="@nameof(TodoViewModel.Keyword)" class="form-control" value="@keyword" placeholder="キーワードを入力" aria-label="キーワード検索" aria-describedby="searchTodo" />
+                <button class="btn btn-outline-secondary" type="submit" id="searchTodo">検索</button>
+            </div>
         </form>
+    </li>
+    <li class="nav-item">
+        <div class="dropdown">
+            <span class="dropdown-toggle btn" id="userMenu" data-bs-toggle="dropdown" aria-expanded="false">@nickname</span>
+            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userMenu">
+                <li class="dropdown-item">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-gear"></i>
+                        <a class="btn" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">アカウント設定</a>
+                    </div>
+                </li>
+                <li class="dropdown-item">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-box-arrow-right"></i>
+                        <form class="form-inline" asp-area="Identity" asp-page="/Account/Logout" asp-route-returnUrl="@Url.Action("Index", "Home", new { area = "" })">
+                            <button type="submit" class="btn">ログアウト</button>
+                        </form>
+                    </div>
+                </li>
+            </ul>
+        </div>
     </li>
 }
 else

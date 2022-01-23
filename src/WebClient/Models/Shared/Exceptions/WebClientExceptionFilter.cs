@@ -31,14 +31,14 @@ namespace WebClient.Models.Shared.Exceptions
                 {
                     value = new WebClientExceptionResponseModel(
                         message: domainException.Message);
-                    statusCode = domainException?.StatusCode ?? StatusCodes.Status400BadRequest;
+                    statusCode = domainException.StatusCode ?? StatusCodes.Status400BadRequest;
                     break;
                 }
                 case UseCaseException useCaseException:
                 {
                     value = new WebClientExceptionResponseModel(
                         message: useCaseException.Message);
-                    statusCode = useCaseException?.StatusCode ?? StatusCodes.Status400BadRequest;
+                    statusCode = useCaseException.StatusCode ?? StatusCodes.Status400BadRequest;
                     break;
                 }
                 default:

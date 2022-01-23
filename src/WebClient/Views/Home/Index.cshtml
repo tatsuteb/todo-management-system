@@ -2,7 +2,50 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="text-center mt-5">
+    <div class="d-flex align-items-center">
+        <div class="text-start me-5">
+            <h2 class="h2">
+                いまさらシンプルすぎる<br/>
+                TODO管理
+            </h2>
+            <div class="my-4">完了したかしていないか、それしか管理できない</div>
+            <div>
+                <a class="btn btn-secondary" asp-area="Identity" asp-page="/Account/Register">新規ユーザー登録</a>
+                <div class="my-1">または</div>
+                <a class="btn btn-outline-secondary" asp-area="Identity" asp-page="/Account/Login">ログイン</a>
+            </div>
+        </div>
+        
+        <figure>
+            <img src="./images/hero_lite.png" alt="TODO管理"/>
+        </figure>
+    </div>
+</div>
+
+<div class="d-flex justify-content-center mt-5">
+    <div class="text-start border border-secondary rounded-3 p-3">
+        <div class="fw-bold text-danger">
+            本プロジェクトはドメイン駆動の学習用に作ったデモです。<br />
+            データは適当なタイミングで削除されます。
+        </div>
+        <div>
+            <div class="fw-bold text-secondary">記事</div>
+            <a class="text-dark" href="https://zenn.dev/tatsuteb/articles/f2d05abb8ce9a6" target="_blank">Zenn - ドメイン駆動を実践してみる</a>
+        </div>
+        <div>
+            <div class="fw-bold text-secondary">プロジェクト</div>
+            <a class="text-dark" href="https://github.com/tatsuteb/todo-management-system" target="_blank">GitHub - tatsuteb/todo-management-system</a>
+        </div>
+        <div>
+            <div class="fw-bold text-secondary">SNS</div>
+            <a class="text-dark" href="https://twitter.com/tatsuteb" target="_blank">Twitter - tatsuteb</a>
+        </div>
+    </div>
+</div>
+
+<div class="position-fixed" style="top: -100px; right: -540px; z-index: -1;">
+    <svg width="2000" height="2000" viewBox="0 0 2000 2000" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle opacity="0.1" cx="1000" cy="1000" r="1000" fill="#E49595"></circle>
+    </svg>
 </div>

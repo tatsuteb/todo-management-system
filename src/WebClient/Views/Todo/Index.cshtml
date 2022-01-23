@@ -1,5 +1,17 @@
 ﻿@using Domain.Models.Todos
 @model WebClient.Models.Todos.TodoViewModel
+@{
+    var pageCount = (int)Math.Ceiling((float)Model.Total / Model.PageSize);
+
+    var queries = Context.Request.Query.ToDictionary(
+        x => x.Key, 
+        x => x.Value.ToString());
+
+    queries.Remove(nameof(Model.Id));
+    queries.Remove(nameof(Model.PostInputModel));
+    queries.Remove(nameof(Model.CompleteInputModel));
+    queries.Remove(nameof(Model.TodoDetailsViewModel));
+}
 
 @if (!string.IsNullOrWhiteSpace(Model?.ErrorMessage))
 {
@@ -12,188 +24,237 @@
     </div>
 }
 
-<div class="d-flex mt-5">
-    <div style="width: 200px;">
-        <div class="card">
+<div class="d-flex flex-column align-items-center mt-5">
+    <div class="w-100" style="max-width: 460px">
+        <h6 class="text-black-50 align-self-start">新規作成</h6>
+        <div class="card shadow">
             <div class="card-body">
-                <h6 class="card-subtitle mb-2 text-muted">フィルター</h6>
+                <form id="todoForm" asp-action="Post" method="post">
+                    @{
+                        var postNewQueries = new Dictionary<string, string>(queries);
+                        postNewQueries.Remove(nameof(Model.Keyword));
 
-                <form asp-action="Index" method="get">
-                    @if (!string.IsNullOrWhiteSpace(Model?.Keyword))
-                    {
-                        <input type="hidden" asp-for="Keyword" value="@Model?.Keyword" />
+                        foreach (var (key, value) in postNewQueries)
+                        {
+                            <input type="hidden" name="@key" value="@value" />
+                        }
                     }
+                    <div class="d-flex flex-column">
+                        <div class="form-floating mb-3">
+                            <input asp-for="PostInputModel.Title" class="form-control" placeholder="TODOのタイトルを入力してください"/>
+                            <label asp-for="PostInputModel.Title">タイトル</label>
+                        </div>
 
-                    <div class="form-check">
-                        <input type="checkbox" id="statusFilterIncomplete" name="@nameof(Model.IsIncompleted)" class="form-check-input" value="true" @((Model?.IsIncompleted ?? false) ? "checked=checked" : "")/>
-                        <label class="form-check-label" for="statusFilterIncomplete">未完了</label>
-                    </div>
-                    <div class="form-check">
-                        <input type="checkbox" id="statusFilterComplete" name="@nameof(Model.IsCompleted)" class="form-check-input" value="true" @((Model?.IsCompleted ?? false) ? "checked=checked" : "")/>
-                        <label class="form-check-label" for="statusFilterComplete">完了</label>
-                    </div>
+                        <div>
+                            <a class="link-dark" data-bs-toggle="collapse" href="#collapseDescription" role="button" aria-expanded="false" aria-controls="collapseDescription">
+                                詳細（オプション）
+                            </a>
+                            <div class="collapse mt-1" id="collapseDescription">
+                                <div class="form-floating mb-3">
+                                    <textarea asp-for="PostInputModel.Description" class="form-control" style="height: 100px" placeholder="TODOの詳細を入力してください。"></textarea>
+                                    <label asp-for="PostInputModel.Description">詳細</label>
+                                </div>
+                            </div>
+                        </div>
 
-                    <button type="submit" class="btn btn-primary">適用</button>
+                        <div class="align-self-end">
+                            <button type="submit" class="btn btn-dark">作成</button>
+                        </div>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
-    
-    <div class="mx-3" style="width: 600px;">
-        @if (Model is null || !Model.Summaries.Any())
-        {
-            <div>TODOが見つかりません</div>
-        }
-        else
-        {
-            <table class="table table-hover">
-                <thead>
-                <tr>
-                    <th scope="col">完了</th>
-                    <th scope="col">タイトル</th>
-                    <th scope="col">ステータス</th>
-                </tr>
-                </thead>
-                <tbody>
-                @foreach (var todoSummary in Model.Summaries)
-                {
-                    var isSummaryComplete = todoSummary.StatusString == TodoStatus.完了.ToString();
-                    <tr class="@(Model.Id == todoSummary.Id ? "table-active" : "")">
-                        <th scope="row">
-                            <form id="completeTodoForm_@todoSummary.Id" asp-action="ChangeStatus" method="post">
-                                <input type="hidden" asp-for="CompleteInputModel.TodoId" value="@todoSummary.Id"/>
-                                @if (!string.IsNullOrWhiteSpace(Model.Keyword))
-                                {
-                                    <input type="hidden" asp-for="Keyword" value="@Model.Keyword" />
-                                }
-                                @if (Model.IsIncompleted)
-                                {
-                                    <input type="hidden" asp-for="IsIncompleted" value="true" />
-                                }
-                                @if (Model.IsCompleted)
-                                {
-                                    <input type="hidden" asp-for="IsCompleted" value="true" />
-                                }
-                                @if (isSummaryComplete)
-                                {
-                                    <input type="hidden" asp-for="CompleteInputModel.Status" value="@((int)TodoStatus.未完了)"/>
-                                }
-                                else
-                                {
-                                    <input type="hidden" asp-for="CompleteInputModel.Status" value="@((int)TodoStatus.完了)"/>
-                                }
-                                <input type="checkbox" asp-for="CompleteInputModel.IsComplete" checked="@isSummaryComplete" data-form="completeTodoForm_@todoSummary.Id"/>
-                            </form>
-                        </th>
-                        <td>
-                            @{
-                                var allData = new Dictionary<string, string>
-                                {
-                                    { nameof(Model.Id), todoSummary.Id }
-                                };
-                                if (!string.IsNullOrWhiteSpace(Model.Keyword))
-                                {
-                                    allData.Add(nameof(Model.Keyword), Model.Keyword);
-                                }
-                                if (Model.IsIncompleted)
-                                {
-                                    allData.Add(nameof(Model.IsIncompleted), "true");
-                                }
-                                if (Model.IsCompleted)
-                                {
-                                    allData.Add(nameof(Model.IsCompleted), "true");
-                                }
+
+<div class="w-100 mt-5" style="max-width: 600px">
+    <h6 class="text-black-50 align-self-start">TODO一覧</h6>
+    <div class="card shadow-sm overflow-hidden">
+        <div>
+            <div class="d-flex align-items-center bg-light p-3">
+                <span class="text-muted me-1"><i class="bi bi-filter"></i>フィルター</span>
+                <form asp-action="Index" method="get">
+                    <div class="d-flex">
+                        @{
+                            var filterQueries = new Dictionary<string, string>(queries);
+                            filterQueries.Remove(nameof(Model.IsIncompleted));
+                            filterQueries.Remove(nameof(Model.IsCompleted));
+
+                            foreach (var (key, value) in filterQueries)
+                            {
+                                <input type="hidden" name="@key" value="@value" />
                             }
-                            <a asp-action="Index" asp-all-route-data="@allData" class="link-dark text-decoration-none">@todoSummary.Title</a>
-                        </td>
-                        <td>
-                            <span class="badge rounded-pill @(isSummaryComplete ? "bg-success" : "bg-warning text-dark")">@todoSummary.StatusString</span>
-                        </td>
-                    </tr>
-                }
-                </tbody>
-            </table>
-        }
-    </div>
-    
-    <div style="width: 350px;">
-        <form id="todoForm" asp-action="Post" method="post">
-            <div class="form-floating mb-3">
-                <input asp-for="PostInputModel.Title" class="form-control" placeholder="TODOのタイトルを入力してください" />
-                <label asp-for="PostInputModel.Title">タイトル</label>
-            </div>
+                        }
 
-            <div class="form-floating mb-3">
-                <textarea asp-for="PostInputModel.Description" class="form-control" placeholder="TODOの詳細を入力してください。"></textarea>
-                <label asp-for="PostInputModel.Description">詳細</label>
-            </div>
-            
-            @if (!string.IsNullOrWhiteSpace(Model?.Id))
-            {
-                <input type="hidden" asp-for="Id" value="@Model.Id" />
-                var isComplete = Model?.TodoGetViewModel.StatusString == TodoStatus.完了.ToString();
-
-                <div class="mb-3"><span class="badge rounded-pill @(isComplete ? "bg-success" : "bg-warning text-dark")">@(!string.IsNullOrWhiteSpace(Model?.Id) ? Model.TodoGetViewModel.StatusString : "未完了")</span></div>
-
-                <div class="form-floating">
-                    <input type="text" class="form-control" id="createdDataTime" value="@(!string.IsNullOrWhiteSpace(Model?.Id) ? Model.TodoGetViewModel.CreatedDateTime : "")" readonly="readonly">
-                    <label for="createdDataTime">作成日時</label>
-                </div>
-            }
-        </form>
-
-        <div class="d-flex justify-content-between mt-3">
-            @if (!string.IsNullOrWhiteSpace(Model?.Id))
-            {
-                <form asp-action="Delete" method="post">
-                    <input type="hidden" asp-for="Id" />
-
-                    <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">削除</button>
-
-                    <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h5 class="modal-title" id="deleteModalLabel">TODO削除</h5>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-                                    選択したTODOを削除しますか？
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
-                                    <button type="submit" class="btn btn-primary">削除</button>
-                                </div>
-                            </div>
+                        <div class="form-check form-check-inline">
+                            <input type="checkbox" id="statusFilterIncomplete" name="@nameof(Model.IsIncompleted)" class="form-check-input" value="true" @((Model?.IsIncompleted ?? false) ? "checked=checked" : "") onchange="submit()"/>
+                            <label class="form-check-label" for="statusFilterIncomplete">未完了</label>
+                        </div>
+                        <div class="form-check form-check-inline">
+                            <input type="checkbox" id="statusFilterComplete" name="@nameof(Model.IsCompleted)" class="form-check-input" value="true" @((Model?.IsCompleted ?? false) ? "checked=checked" : "") onchange="submit()"/>
+                            <label class="form-check-label" for="statusFilterComplete">完了</label>
                         </div>
                     </div>
                 </form>
+            </div>
+                
+            @if (Model is null || !Model.Summaries.Any())
+            {
+                <div class="d-flex align-items-center justify-content-center p-3">TODOが見つかりません</div>
             }
             else
             {
-                <button type="button" class="btn btn-outline-secondary" disabled="disabled">削除</button>
-            }
+                @foreach (var todoSummary in Model.Summaries)
+                {
+                    var isSummaryComplete = todoSummary.StatusString == TodoStatus.完了.ToString();
 
-            <button type="submit" form="todoForm" class="btn btn-primary">@(!string.IsNullOrWhiteSpace(Model?.Id) ? "更新" : "作成")</button>
+                    <div class="d-flex align-items-center justify-content-between p-3">
+                        <div class="d-flex align-items-center justify-content-start">
+                            <form id="completeTodoForm_@todoSummary.Id" asp-action="ChangeStatus" method="post">
+                                @foreach (var (key, value) in queries)
+                                {
+                                    <input type="hidden" name="@key" value="@value" />
+                                }
+                                <input type="hidden" asp-for="CompleteInputModel.TodoId" value="@todoSummary.Id"/>
+
+                                <input type="checkbox" asp-for="CompleteInputModel.IsComplete" checked="@isSummaryComplete" data-form="completeTodoForm_@todoSummary.Id" onchange="submit()"/>
+                            </form>
+
+                            <div class="ms-3">
+                                @{
+                                    var detailsQueries = new Dictionary<string, string>(queries);
+                                    if (detailsQueries.ContainsKey(nameof(Model.Id)))
+                                    {
+                                        detailsQueries[nameof(Model.Id)] = todoSummary.Id;
+                                    }
+                                    else
+                                    {
+                                        detailsQueries.Add(nameof(Model.Id), todoSummary.Id);
+                                    }
+                                }
+                                <a asp-action="Index" asp-all-route-data="@detailsQueries" class="link-dark text-decoration-none">@todoSummary.Title</a>
+                            </div>
+                        </div>
+
+                        <form asp-action="Delete" method="post">
+                            @foreach (var (key, value) in queries)
+                            {
+                                <input type="hidden" name="@key" value="@value" />
+                            }
+                            <input type="hidden" asp-for="Id" value="@todoSummary.Id"/>
+
+                            <span class="text-secondary" data-bs-toggle="modal" data-bs-target="#deleteModal"><i class="bi bi-trash-fill"></i></span>
+
+                            <div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="deleteModalLabel">TODO削除</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                            選択したTODOを削除しますか？
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">閉じる</button>
+                                            <button type="submit" class="btn btn-primary">削除</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                }
+
+                <div class="d-flex justify-content-center align-items-center bg-light p-3">
+                    <nav aria-label="Page navigation example">
+                        <ul class="pagination" style="margin-bottom: 0;">
+                            @{
+                                var pagenationQueries = new Dictionary<string, string>(queries);
+
+                                var prevPageNum = Model.PageNum - 1;
+                                if (pagenationQueries.ContainsKey("PageNum"))
+                                {
+                                    pagenationQueries["PageNum"] = prevPageNum.ToString();
+                                }
+                            }
+                            <li class="page-item @(prevPageNum < 1 ? "disabled" : "")">
+                                <a class="page-link" asp-action="Index" asp-all-route-data="pagenationQueries" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            @for (var i = 1; i <= pageCount; i++)
+                            {
+                                if (!pagenationQueries.ContainsKey("PageNum"))
+                                {
+                                    continue;
+                                }
+                                pagenationQueries["PageNum"] = i.ToString();
+
+                                <li class="page-item @(i == Model.PageNum ? "active" : "")">
+                                    <a class="page-link" asp-action="Index" asp-all-route-data="pagenationQueries">@i</a>
+                                </li>
+                            }
+                            @{
+                                var nextPageNum = Model.PageNum + 1;
+                                if (pagenationQueries.ContainsKey("PageNum"))
+                                {
+                                    pagenationQueries["PageNum"] = nextPageNum.ToString();
+                                }
+                            }
+                            <li class="page-item @(nextPageNum > pageCount ? "disabled": "")">
+                                <a class="page-link" asp-action="Index" asp-all-route-data="pagenationQueries" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
         </div>
     </div>
 </div>
 
-@section Scripts
+    
+@if (Model?.ShowDetails ?? false)
 {
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            const completeTodoInputs = document.getElementsByName("CompleteInputModel.IsComplete");
-            completeTodoInputs.forEach(element => {
-                element.addEventListener("change",
-                    () => {
-                        const form = document.getElementById(element.dataset.form);
-                        
-                        if (form === undefined || form === null) return;
+    <div class="offcanvas offcanvas-end show" tabindex="-1" id="offcanvasExample" aria-labelledby="offcanvasExampleLabel">
+        <form asp-action="Post" method="post">
+            <input type="hidden" asp-for="Id" value="@Model.TodoDetailsViewModel.Id" />
 
-                        form.submit();
-                    });
-            });
-        });
-    </script>
+            <div class="offcanvas-header">
+                <h5 class="offcanvas-title" id="offcanvasExampleLabel">TODO詳細</h5>
+                <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body">
+                <div class="form-floating">
+                    <input asp-for="PostInputModel.Title" class="form-control" placeholder="TODOのタイトルを入力してください" value="@Model.TodoDetailsViewModel.Title"/>
+                    <label>タイトル</label>
+                </div>
+
+                <div class="form-floating mt-3">
+                    <textarea name="PostInputModel.Description" class="form-control" style="height: 100px" placeholder="TODOの詳細を入力してください。">@Model.TodoDetailsViewModel.Description</textarea>
+                    <label>詳細</label>
+                </div>
+
+                <div class="form-check mt-3">
+                    @if (Model.TodoDetailsViewModel.Status == (int)TodoStatus.完了)
+                    {
+                        <input asp-for="PostInputModel.IsComplete" class="form-check-input" type="checkbox" value="true" id="flexCheckChecked" checked="checked"/>
+                    }
+                    else
+                    {
+                        <input asp-for="PostInputModel.IsComplete" class="form-check-input" type="checkbox" value="true" id="flexCheckChecked" />
+                    }
+                    <label class="form-check-label" for="flexCheckChecked">完了</label>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center  mt-3">
+                    <button type="button" class="btn btn-outline-dark" data-bs-dismiss="offcanvas" aria-label="Close">キャンセル</button>
+                    <button type="submit" class="btn btn-dark">更新</button>
+                </div>
+            </div>
+        </form>
+    </div>
 }
+
+</div>

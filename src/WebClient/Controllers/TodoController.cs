@@ -72,6 +72,7 @@ namespace WebClient.Controllers
                 viewModel.Summaries = searchResult.Summaries
                     .Select(x => new TodoSummaryViewModel(x))
                     .ToArray();
+                viewModel.Total = searchResult.Total;
 
                 #endregion
 
@@ -84,13 +85,13 @@ namespace WebClient.Controllers
                         viewModel.Id);
                     var getResult = await _todoGetUseCase.ExecuteAsync(getCommand);
 
-                    viewModel.PostInputModel ??= new TodoPostInputModel();
-                    viewModel.TodoGetViewModel ??= new TodoGetViewModel();
+                    viewModel.ShowDetails = true;
 
-                    viewModel.PostInputModel.Title = getResult.Todo.Title;
-                    viewModel.PostInputModel.Description = getResult.Todo.Description ?? "";
-                    viewModel.TodoGetViewModel.StatusString = getResult.Todo.StatusName;
-                    viewModel.TodoGetViewModel.CreatedDateTime = getResult.Todo.CreatedDateTime;
+                    viewModel.TodoDetailsViewModel.Id = getResult.Todo.Id;
+                    viewModel.TodoDetailsViewModel.Title = getResult.Todo.Title;
+                    viewModel.TodoDetailsViewModel.Description = getResult.Todo.Description;
+                    viewModel.TodoDetailsViewModel.Status = getResult.Todo.Status;
+                    viewModel.TodoDetailsViewModel.CreatedDateTime = getResult.Todo.CreatedDateTime;
                 }
 
                 #endregion
@@ -116,21 +117,31 @@ namespace WebClient.Controllers
                 {
                     var createCommand = new TodoCreateCommand(
                         userSession: new UserSession(userId),
-                        title: viewModel.PostInputModel?.Title ?? "",
-                        description: viewModel.PostInputModel?.Description);
-                    var createResult = await _todoCreateUseCase.ExecuteAsync(createCommand);
-
-                    viewModel.Id = createResult.Id;
+                        title: viewModel.PostInputModel.Title ?? "",
+                        description: viewModel.PostInputModel.Description);
+                    await _todoCreateUseCase.ExecuteAsync(createCommand);
                 }
                 else
                 {
                     var editCommand = new TodoEditCommand(
                         userSession: new UserSession(userId),
                         id: viewModel.Id,
-                        title: viewModel.PostInputModel?.Title ?? "",
-                        description: viewModel.PostInputModel?.Description);
+                        title: viewModel.PostInputModel.Title,
+                        description: viewModel.PostInputModel.Description);
                     await _todoEditUseCase.ExecuteAsync(editCommand);
+
+                    var postStatus = viewModel.PostInputModel.IsComplete ? (int)TodoStatus.完了 : (int)TodoStatus.未完了;
+                    if (viewModel.TodoDetailsViewModel.Status != postStatus)
+                    {
+                        await ChangeStatusAsync(
+                            todoUpdateStatusUseCase: _todoUpdateStatusUseCase,
+                            userId: userId,
+                            todoId: viewModel.Id,
+                            status: viewModel.PostInputModel.IsComplete ? (int)TodoStatus.完了 : (int)TodoStatus.未完了);
+                    }
                 }
+
+                viewModel.Id = string.Empty;
             }
             catch (Exception e)
             {
@@ -138,10 +149,6 @@ namespace WebClient.Controllers
 
                 viewModel.ErrorMessage = e.Message;
             }
-
-            viewModel.PostInputModel = null;
-            viewModel.TodoGetViewModel = null;
-            viewModel.CompleteInputModel = null;
 
             return RedirectToAction("Index", viewModel);
         }
@@ -159,8 +166,6 @@ namespace WebClient.Controllers
                 await _todoDeleteUseCase.ExecuteAsync(command);
 
                 viewModel.Id = "";
-                viewModel.TodoGetViewModel = null;
-                viewModel.PostInputModel = null;
             }
             catch (Exception e)
             {
@@ -179,11 +184,11 @@ namespace WebClient.Controllers
             {
                 var userId = _userManager.GetUserId(User) ?? "";
 
-                var command = new TodoUpdateStatusCommand(
-                    userSession: new UserSession(userId),
-                    id: viewModel.CompleteInputModel?.TodoId ?? "",
-                    status: viewModel.CompleteInputModel?.Status ?? default);
-                await _todoUpdateStatusUseCase.ExecuteAsync(command);
+                await ChangeStatusAsync(
+                    todoUpdateStatusUseCase: _todoUpdateStatusUseCase,
+                    userId: userId,
+                    todoId: viewModel.CompleteInputModel.TodoId,
+                    status: viewModel.CompleteInputModel.IsComplete ? (int)TodoStatus.完了 : (int)TodoStatus.未完了);
             }
             catch (Exception e)
             {
@@ -192,11 +197,20 @@ namespace WebClient.Controllers
                 viewModel.ErrorMessage = e.Message;
             }
 
-            viewModel.PostInputModel = null;
-            viewModel.CompleteInputModel = null;
-            viewModel.TodoGetViewModel = null;
-
             return RedirectToAction("Index", viewModel);
+        }
+
+        private static async Task ChangeStatusAsync(
+            TodoUpdateStatusUseCase todoUpdateStatusUseCase, 
+            string userId, 
+            string todoId, 
+            int status)
+        {
+            var command = new TodoUpdateStatusCommand(
+                userSession: new UserSession(userId),
+                id: todoId,
+                status: status);
+            await todoUpdateStatusUseCase.ExecuteAsync(command);
         }
     }
 }
