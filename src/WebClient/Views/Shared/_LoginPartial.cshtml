@@ -40,11 +40,13 @@
 
                     var keyword = queries.ContainsKey(nameof(TodoViewModel.Keyword)) ? queries[nameof(TodoViewModel.Keyword)] : "";
 
-                    queries.Remove("PostInputModel");
-                    queries.Remove("CompleteInputModel");
-                    queries.Remove("TodoDetailsViewModel");
+                    queries.Remove(nameof(TodoViewModel.PostInputModel));
+                    queries.Remove(nameof(TodoViewModel.CompleteInputModel));
+                    queries.Remove(nameof(TodoViewModel.TodoDetailsViewModel));
 
                     queries.Remove(nameof(TodoViewModel.Keyword));
+                    queries.Remove(nameof(TodoViewModel.Id));
+                    queries.Remove(nameof(TodoViewModel.ShowDetails));
 
                     foreach (var (key, value) in queries)
                     {
