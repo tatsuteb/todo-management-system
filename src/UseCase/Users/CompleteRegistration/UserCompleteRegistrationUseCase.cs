@@ -1,4 +1,6 @@
-﻿using Domain.Models.Users;
+﻿using System.Net;
+using System.Transactions;
+using Domain.Models.Users;
 using UseCase.Shared;
 
 namespace UseCase.Users.CompleteRegistration
@@ -14,16 +16,30 @@ namespace UseCase.Users.CompleteRegistration
 
         public async Task ExecuteAsync(UserCompleteRegistrationCommand command)
         {
-            var user = await _userRepository.FindAsync(new UserId(command.UserSession.Id));
+            var ts = new TransactionScope();
 
-            if (user is null)
+            try
             {
-                throw new UseCaseException("指定されたユーザーが見つかりません。");
+                var user = await _userRepository.FindAsync(new UserId(command.UserSession.Id));
+
+                if (user is null)
+                {
+                    throw new UseCaseException("指定されたユーザーが見つかりません。");
+                }
+
+                user.ChangeStatus(UserStatus.有効);
+
+                await _userRepository.SaveAsync(user);
+
+                ts.Complete();
             }
+            catch (Exception e)
+            {
+                ts.Dispose();
 
-            user.ChangeStatus(UserStatus.有効);
-
-            await _userRepository.SaveAsync(user);
+                Console.WriteLine(e);
+                throw new UseCaseException("ユーザー本登録に失敗しました。", (int)HttpStatusCode.InternalServerError);
+            }
         }
     }
 }

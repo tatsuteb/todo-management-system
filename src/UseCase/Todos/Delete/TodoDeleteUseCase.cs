@@ -1,4 +1,6 @@
-﻿using Domain.Models.Todos;
+﻿using System.Net;
+using System.Transactions;
+using Domain.Models.Todos;
 using UseCase.Shared;
 
 namespace UseCase.Todos.Delete
@@ -14,22 +16,36 @@ namespace UseCase.Todos.Delete
 
         public async Task ExecuteAsync(TodoDeleteCommand command)
         {
-            var todo = await _todoRepository.FindAsync(new TodoId(command.Id));
+            using var ts = new TransactionScope();
 
-            if (todo is null)
+            try
             {
-                throw new UseCaseException("指定されたTODOが見つかりません。");
-            }
+                var todo = await _todoRepository.FindAsync(new TodoId(command.Id));
 
-            // NOTE: ドメインルール？
-            if (todo.OwnerId.Value != command.UserSession.Id)
+                if (todo is null)
+                {
+                    throw new UseCaseException("指定されたTODOが見つかりません。");
+                }
+
+                // NOTE: ドメインルール？
+                if (todo.OwnerId.Value != command.UserSession.Id)
+                {
+                    throw new UseCaseException("指定されたTODOを削除する権限がありません。");
+                }
+
+                todo.Delete();
+
+                await _todoRepository.SaveAsync(todo);
+
+                ts.Complete();
+            }
+            catch (Exception e)
             {
-                throw new UseCaseException("指定されたTODOを削除する権限がありません。");
+                ts.Dispose();
+
+                Console.WriteLine(e);
+                throw new UseCaseException("TODOの削除に失敗しました。", (int)HttpStatusCode.InternalServerError);
             }
-
-            todo.Delete();
-
-            await _todoRepository.SaveAsync(todo);
         }
     }
 }

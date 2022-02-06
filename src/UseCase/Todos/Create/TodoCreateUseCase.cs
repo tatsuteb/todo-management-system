@@ -1,5 +1,8 @@
-﻿using Domain.Models.Todos;
+﻿using System.Net;
+using System.Transactions;
+using Domain.Models.Todos;
 using Domain.Models.Users;
+using UseCase.Shared;
 
 namespace UseCase.Todos.Create
 {
@@ -14,16 +17,30 @@ namespace UseCase.Todos.Create
 
         public async Task<TodoCreateResult> ExecuteAsync(TodoCreateCommand command)
         {
-            var todo = Todo.CreateNew(
-                title: new TodoTitle(command.Title),
-                description: !string.IsNullOrWhiteSpace(command.Description)
-                    ? new TodoDescription(command.Description)
-                    : null,
-                ownerId: new UserId(command.UserSession.Id));
+            using var ts = new TransactionScope();
 
-            await _todoRepository.SaveAsync(todo);
+            try
+            {
+                var todo = Todo.CreateNew(
+                    title: new TodoTitle(command.Title),
+                    description: !string.IsNullOrWhiteSpace(command.Description)
+                        ? new TodoDescription(command.Description)
+                        : null,
+                    ownerId: new UserId(command.UserSession.Id));
 
-            return new TodoCreateResult(todo.Id.Value);
+                await _todoRepository.SaveAsync(todo);
+
+                ts.Complete();
+
+                return new TodoCreateResult(todo.Id.Value);
+            }
+            catch (Exception e)
+            {
+                ts.Dispose();
+
+                Console.WriteLine(e);
+                throw new UseCaseException("TODOの作成に失敗しました。", (int)HttpStatusCode.InternalServerError);
+            }
         }
     }
 }
