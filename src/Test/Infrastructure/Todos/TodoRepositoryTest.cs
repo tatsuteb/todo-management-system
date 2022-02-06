@@ -1,8 +1,7 @@
-﻿using System;
-using System.Threading.Tasks;
-using Domain.Models.Todos;
+﻿using Domain.Models.Todos;
 using Infrastructure.Todos;
 using NUnit.Framework;
+using System.Threading.Tasks;
 using Test.Helpers;
 using Test.Shared;
 

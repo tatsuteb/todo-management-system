@@ -22,8 +22,8 @@ namespace Test.Helpers
                 title: title is null ? new TodoTitle("タイトル") : new TodoTitle(title),
                 description: description is null ? new TodoDescription("詳細") : new TodoDescription(description),
                 ownerId: ownerId is null ? new UserId(Guid.NewGuid().ToString("D")) : new UserId(ownerId),
-                createdDateTime: createdDateTime is null ? DateTime.Now : (DateTime) createdDateTime,
-                updatedDateTime: updatedDateTime is null ? DateTime.Now : (DateTime) updatedDateTime,
+                createdDateTime: createdDateTime ?? DateTime.Now,
+                updatedDateTime: updatedDateTime ?? DateTime.Now,
                 status: status,
                 isDeleted: isDeleted,
                 deletedDateTime: isDeleted
