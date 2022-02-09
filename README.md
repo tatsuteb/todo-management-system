@@ -1,3 +1,6 @@
+## はじめに
+このプロジェクトはZennに投稿した記事[「とにかくドメイン駆動設計を実践してみる試み ～TODO管理システム編～」](https://zenn.dev/tatsuteb/articles/f2d05abb8ce9a6)で取り上げたものです。
+
 ## デモ
 https://user-images.githubusercontent.com/23710529/152676017-9fbd98ea-3235-4e0d-b858-d41036ab59b4.mp4
 
