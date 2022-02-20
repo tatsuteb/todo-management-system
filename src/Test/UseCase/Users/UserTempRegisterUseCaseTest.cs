@@ -45,7 +45,6 @@ namespace Test.UseCase.Users
             Assert.That(exists, Is.True);
         }
 
-        [Test]
         [TestCase("username1", "unique_mail@test.com", TestName = "既存のユーザーとユーザー名が重複すると例外が発生する")]
         [TestCase("uniqueUsername", "username2@test.com", TestName = "既存のユーザーとメールアドレスが重複すると例外が発生する")]
         public async Task 既存のユーザーと重複すると例外が発生する(string testUsername, string testEmail)
