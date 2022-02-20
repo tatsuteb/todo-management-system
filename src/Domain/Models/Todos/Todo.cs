@@ -13,7 +13,7 @@ namespace Domain.Models.Todos
         public DateTime UpdatedDateTime { get; private set; }
         public TodoStatus Status { get; private set; }
         public bool IsDeleted { get; private set; }
-        public DateTime? DeletedDateTime { get; set; }
+        public DateTime? DeletedDateTime { get; private set; }
 
         private Todo(
             TodoId id, 
