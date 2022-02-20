@@ -45,7 +45,7 @@ namespace Test.UseCase.Todos
         }
 
         [Test]
-        public async Task 存在しないTODOのIDを指定すると例外が発生する()
+        public void 存在しないTODOのIDを指定すると例外が発生する()
         {
             // 準備
             var userId = Guid.NewGuid().ToString();
