@@ -41,7 +41,7 @@ namespace Test.UseCase.Todos
         }
 
         [Test]
-        public async Task 存在しないTODOを指定して削除すると例外が発生する()
+        public void 存在しないTODOを指定して削除すると例外が発生する()
         {
             // 準備
             var todo = TodoGenerator.Generate();

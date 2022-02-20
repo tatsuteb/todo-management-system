@@ -1,9 +1,9 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Domain.Models.Todos;
+﻿using Domain.Models.Todos;
 using Infrastructure.Todos;
 using NUnit.Framework;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Test.Helpers;
 using Test.Shared;
 using UseCase.Shared;
@@ -22,136 +22,59 @@ namespace Test.Infrastructure.Todos
             _todoRepository = new TodoRepository(TestDbContext);
         }
 
-        [Test]
-        public async Task オプションを指定しないと削除済み以外のすべてのTODOが返される()
+        [TestCase("keyword", new [] { (int) TodoStatus.未完了 }, ExpectedResult = new object[] { 1, true }, TestName = "キーワードとステータスを指定すると削除済み以外ですべての条件を満たすTODOが返される")]
+        [TestCase(null, new [] { (int) TodoStatus.未完了 }, ExpectedResult = new object[] { 2, false }, TestName = "ステータスのみ指定すると削除済み以外で同じステータスのTODOが返される")]
+        [TestCase("keyword", null, ExpectedResult = new object[] { 2, true }, TestName = "キーワードのみ指定すると削除済み以外でタイトルまたは詳細にキーワードを含むTODOが返される")]
+        [TestCase(null, null, ExpectedResult = new object[] { 4, false }, TestName = "キーワード、ステータス指定なしだと削除済み以外のすべてのTODOが返される")]
+        public async Task<object[]> 条件を満たすTODOが返される(string keyword, int[]? statuses)
         {
             // 準備
             var userId = Guid.NewGuid().ToString("D");
-            var todo1 = TodoGenerator.Generate(
-                ownerId: userId);
-            var todo2 = TodoGenerator.Generate(
-                ownerId: userId,
-                status: TodoStatus.完了);
-            // 削除済みTODO
-            var todo3 = TodoGenerator.Generate(
-                ownerId: userId,
-                isDeleted: true,
-                deletedDateTime: DateTime.Now);
+            var todos = new []
+            {
+                TodoGenerator.Generate(
+                    ownerId: userId),
+                TodoGenerator.Generate(
+                    ownerId: userId,
+                    status: TodoStatus.完了),
+                TodoGenerator.Generate(
+                    title: "keyword",
+                    ownerId: userId),
+                TodoGenerator.Generate(
+                    description: "keyword",
+                    ownerId: userId,
+                    status: TodoStatus.完了),
+                // 削除済みTODO
+                TodoGenerator.Generate(
+                    ownerId: userId,
+                    isDeleted: true,
+                    deletedDateTime: DateTime.Now)
+            };
 
-            await _todoRepository.SaveAsync(todo1);
-            await _todoRepository.SaveAsync(todo2);
-            await _todoRepository.SaveAsync(todo3);
-
-            // 実行
-            var command = new TodoSearchCommand(
-                userSession: new UserSession(userId));
-            var result = await _todoSearchQueryService.ExecuteAsync(command);
-
-            // 検証
-            Assert.That(result.Total, Is.EqualTo(2));
-        }
-
-        [Test]
-        public async Task オプションでキーワードを指定すると削除済み以外でタイトルまたは詳細にキーワードを含むTODOが返される()
-        {
-            // 準備
-            var userId = Guid.NewGuid().ToString("D");
-            var todo1 = TodoGenerator.Generate(
-                title: "keyword",
-                ownerId: userId);
-            var todo2 = TodoGenerator.Generate(
-                description: "keyword",
-                ownerId: userId,
-                status: TodoStatus.完了);
-            // 削除済みTODO
-            var todo3 = TodoGenerator.Generate(
-                title: "keyword",
-                ownerId: userId,
-                isDeleted: true,
-                deletedDateTime: DateTime.Now);
-
-            await _todoRepository.SaveAsync(todo1);
-            await _todoRepository.SaveAsync(todo2);
-            await _todoRepository.SaveAsync(todo3);
+            foreach (var todo in todos)
+            {
+                await _todoRepository.SaveAsync(todo);
+            }
 
             // 実行
             var command = new TodoSearchCommand(
                 userSession: new UserSession(userId),
-                keyword: "keyword");
+                keyword: keyword,
+                statuses: statuses);
             var result = await _todoSearchQueryService.ExecuteAsync(command);
 
             // 検証
-            Assert.That(result.Total, Is.EqualTo(2));
-            Assert.That(result.Summaries.Any(x => x.Id == todo1.Id.Value), Is.True);
-            Assert.That(result.Summaries.Any(x => x.Id == todo2.Id.Value), Is.True);
-            Assert.That(result.Summaries.Any(x => x.Id == todo3.Id.Value), Is.False);
-        }
+            var hasKeyword = !string.IsNullOrWhiteSpace(keyword) && 
+                             result.Summaries
+                                 .Join(todos, 
+                                     x => x.Id, y => y.Id.Value,
+                                    (x, y) => new { Title = y.Title.Value, Description = y.Description?.Value ?? "" })
+                                .Any(x =>
+                                    string.IsNullOrWhiteSpace(keyword) ||
+                                    x.Title.Contains(keyword, StringComparison.OrdinalIgnoreCase) ||
+                                    x.Description.Contains(keyword, StringComparison.OrdinalIgnoreCase));
 
-        [Test]
-        public async Task オプションでステータスを指定すると削除済み以外で同じステータスのTODOが返される()
-        {
-            // 準備
-            var userId = Guid.NewGuid().ToString("D");
-            var todo1 = TodoGenerator.Generate(
-                ownerId: userId,
-                status: TodoStatus.未完了);
-            var todo2 = TodoGenerator.Generate(
-                ownerId: userId,
-                status: TodoStatus.完了);
-            // 削除済みTODO
-            var todo3 = TodoGenerator.Generate(
-                ownerId: userId,
-                status: TodoStatus.未完了,
-                isDeleted: true,
-                deletedDateTime: DateTime.Now);
-
-            await _todoRepository.SaveAsync(todo1);
-            await _todoRepository.SaveAsync(todo2);
-            await _todoRepository.SaveAsync(todo3);
-
-            // 実行
-            var command = new TodoSearchCommand(
-                userSession: new UserSession(userId),
-                statuses: new []{ (int) TodoStatus.未完了 });
-            var result = await _todoSearchQueryService.ExecuteAsync(command);
-
-            // 検証
-            Assert.That(result.Total, Is.EqualTo(1));
-        }
-
-        [Test]
-        public async Task オプションでキーワードとステータスを指定すると削除済み以外ですべての条件を満たすTODOが返される()
-        {
-            // 準備
-            var userId = Guid.NewGuid().ToString("D");
-            var todo1 = TodoGenerator.Generate(
-                title: "keyword",
-                ownerId: userId,
-                status: TodoStatus.未完了);
-            var todo2 = TodoGenerator.Generate(
-                title: "keyword",
-                ownerId: userId,
-                status: TodoStatus.完了);
-            // 削除済みTODO
-            var todo3 = TodoGenerator.Generate(
-                ownerId: userId,
-                status: TodoStatus.未完了,
-                isDeleted: true,
-                deletedDateTime: DateTime.Now);
-
-            await _todoRepository.SaveAsync(todo1);
-            await _todoRepository.SaveAsync(todo2);
-            await _todoRepository.SaveAsync(todo3);
-
-            // 実行
-            var command = new TodoSearchCommand(
-                userSession: new UserSession(userId),
-                keyword: "keyword",
-                statuses: new[] { (int)TodoStatus.未完了 });
-            var result = await _todoSearchQueryService.ExecuteAsync(command);
-
-            // 検証
-            Assert.That(result.Total, Is.EqualTo(1));
+            return new object[] { result.Total, hasKeyword };
         }
     }
 }
