@@ -15,22 +15,13 @@ namespace Test.Domain.Models.Users
             Assert.That(username.Value, Is.EqualTo(value));
         }
 
+        [TestCase("ユーザー名", TestName = "引数に全角を含む文字列を渡すと例外が発生する")]
+        [TestCase("Lorem_ipsum_dolor_sit_amet_dui.", TestName = "引数に31文字以上の文字列を渡すと例外が発生する")]
         [Test]
-        public void 引数に31文字以上の文字列を渡すと例外が発生する()
+        public void 引数に不正な文字列を渡すと例外が発生する(string username)
         {
-            // 31文字
-            const string value = "Lorem_ipsum_dolor_sit_amet_dui.";
             Assert.That(
-                () => new Username(value),
-                Throws.TypeOf<DomainException>());
-        }
-
-        [Test]
-        public void 引数に全角を含む文字列を渡すと例外が発生する()
-        {
-            const string value = "ユーザー名";
-            Assert.That(
-                () => new Username(value),
+                () => new Username(username),
                 Throws.TypeOf<DomainException>());
         }
     }

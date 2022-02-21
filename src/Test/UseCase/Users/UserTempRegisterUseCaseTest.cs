@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
+using System.Transactions;
 using Domain.Models.Users;
 using Infrastructure.Users;
 using NUnit.Framework;
@@ -44,9 +45,12 @@ namespace Test.UseCase.Users
             Assert.That(exists, Is.True);
         }
 
-        [Test]
-        public async Task 既存のユーザーと重複すると例外が発生する()
+        [TestCase("username1", "unique_mail@test.com", TestName = "既存のユーザーとユーザー名が重複すると例外が発生する")]
+        [TestCase("uniqueUsername", "username2@test.com", TestName = "既存のユーザーとメールアドレスが重複すると例外が発生する")]
+        public async Task 既存のユーザーと重複すると例外が発生する(string testUsername, string testEmail)
         {
+            using var ts = new TransactionScope(TransactionScopeOption.Suppress);
+            
             // 準備
             var existUser1 = UserGenerator.Generate(
                 name: "username1",
@@ -58,23 +62,13 @@ namespace Test.UseCase.Users
             await _userRepository.SaveAsync(existUser2);
 
             // 実行・検証
-            // ユーザー名重複
-            var command1 = new UserTempRegisterCommand(
+            var command = new UserTempRegisterCommand(
                 userSession: new UserSession(Guid.NewGuid().ToString("D")),
-                name: "username1",
-                email: "new_username@test.com",
+                name: testUsername,
+                email: testEmail,
                 nickname: "ニックネーム");
             Assert.That(
-                async () => await _userTempRegisterUseCase.ExecuteAsync(command1),
-                Throws.TypeOf<UseCaseException>());
-            // メールアドレス重複
-            var command2 = new UserTempRegisterCommand(
-                userSession: new UserSession(Guid.NewGuid().ToString("D")),
-                name: "username",
-                email: "username2@test.com",
-                nickname: "ニックネーム");
-            Assert.That(
-                async () => await _userTempRegisterUseCase.ExecuteAsync(command2),
+                async () => await _userTempRegisterUseCase.ExecuteAsync(command),
                 Throws.TypeOf<UseCaseException>());
         }
     }
