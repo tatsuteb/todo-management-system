@@ -1,8 +1,7 @@
-﻿using System.Net;
-using System.Transactions;
-using Domain.Models.Users;
+﻿using Domain.Models.Users;
 using Domain.Models.Users.Specifications;
 using Domain.Models.Users.UserProfiles;
+using System.Transactions;
 using UseCase.Shared;
 
 namespace UseCase.Users.TempRegister
@@ -20,33 +19,23 @@ namespace UseCase.Users.TempRegister
         {
             using var ts = new TransactionScope();
 
-            try
+            var user = User.CreateNew(
+                id: new UserId(command.UserSession.Id),
+                name: new Username(command.Name),
+                email: new UserEmailAddress(command.Email),
+                nickname: new UserNickname(command.Nickname));
+
+            var spec = new UserDuplicationSpecification(_userRepository);
+            if (await spec.IsSatisfiedByAsync(user))
             {
-                var user = User.CreateNew(
-                    id: new UserId(command.UserSession.Id),
-                    name: new Username(command.Name),
-                    email: new UserEmailAddress(command.Email),
-                    nickname: new UserNickname(command.Nickname));
-
-                var spec = new UserDuplicationSpecification(_userRepository);
-                if (await spec.IsSatisfiedByAsync(user))
-                {
-                    throw new UseCaseException("指定されたユーザーは既に存在しています。");
-                }
-
-                await _userRepository.SaveAsync(user);
-
-                ts.Complete();
-
-                return new UserTempRegisterResult(user.Id.Value);
+                throw new UseCaseException("指定されたユーザーは既に存在しています。");
             }
-            catch (Exception e)
-            {
-                ts.Dispose();
-                
-                Console.WriteLine(e);
-                throw new UseCaseException("ユーザーの仮登録に失敗しました。", (int)HttpStatusCode.InternalServerError);
-            }
+
+            await _userRepository.SaveAsync(user);
+
+            ts.Complete();
+
+            return new UserTempRegisterResult(user.Id.Value);
         }
     }
 }
