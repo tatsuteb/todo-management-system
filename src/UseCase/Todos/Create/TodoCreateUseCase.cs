@@ -22,6 +22,8 @@ namespace UseCase.Todos.Create
                 description: !string.IsNullOrWhiteSpace(command.Description)
                     ? new TodoDescription(command.Description)
                     : null,
+                beginDateTime: command.BeginDateTime,
+                dueDateTime: command.DueDateTime,
                 ownerId: new UserId(command.UserSession.Id));
 
             await _todoRepository.SaveAsync(todo);

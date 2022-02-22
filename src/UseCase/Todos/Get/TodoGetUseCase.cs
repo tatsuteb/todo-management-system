@@ -30,6 +30,8 @@ namespace UseCase.Todos.Get
                 todo: new TodoData(
                     id: todo.Id.Value,
                     title: todo.Title.Value,
+                    beginDateTime: todo.BeginDateTime,
+                    dueDateTime: todo.DueDateTime,
                     description: todo.Description?.Value ?? "",
                     status: (int) todo.Status,
                     statusName: todo.Status.ToString(),

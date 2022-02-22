@@ -32,6 +32,8 @@ namespace Test.Infrastructure.Todos
             Assert.That(todoDataModel?.Id, Is.EqualTo(todo.Id.Value));
             Assert.That(todoDataModel?.Title, Is.EqualTo(todo.Title.Value));
             Assert.That(todoDataModel?.Description, Is.EqualTo(todo.Description?.Value));
+            Assert.That(todoDataModel?.BeginDateTime, Is.EqualTo(todo.BeginDateTime));
+            Assert.That(todoDataModel?.DueDateTime, Is.EqualTo(todo.DueDateTime));
             Assert.That(todoDataModel?.OwnerId, Is.EqualTo(todo.OwnerId.Value));
             Assert.That(todoDataModel?.Status, Is.EqualTo((int)todo.Status));
             Assert.That(todoDataModel?.CreatedDateTime, Is.EqualTo(todo.CreatedDateTime));
@@ -55,6 +57,8 @@ namespace Test.Infrastructure.Todos
             Assert.That(foundTodo?.Id, Is.EqualTo(todo.Id));
             Assert.That(foundTodo?.Title, Is.EqualTo(todo.Title));
             Assert.That(foundTodo?.Description, Is.EqualTo(todo.Description));
+            Assert.That(foundTodo?.BeginDateTime, Is.EqualTo(todo.BeginDateTime));
+            Assert.That(foundTodo?.DueDateTime, Is.EqualTo(todo.DueDateTime));
             Assert.That(foundTodo?.OwnerId, Is.EqualTo(todo.OwnerId));
             Assert.That(foundTodo?.Status, Is.EqualTo(todo.Status));
             Assert.That(foundTodo?.CreatedDateTime, Is.EqualTo(todo.CreatedDateTime));

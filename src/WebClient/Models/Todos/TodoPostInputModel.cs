@@ -12,6 +12,10 @@ namespace WebClient.Models.Todos
 
         public string Description { get; set; } = "";
 
+        public DateTime? BeginDateTime { get; set; }
+
+        public DateTime? DueDateTime { get; set; }
+
         public bool IsComplete { get; set; }
     }
 }

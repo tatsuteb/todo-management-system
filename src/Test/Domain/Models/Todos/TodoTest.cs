@@ -18,18 +18,23 @@ namespace Test.Domain.Models.Todos
             var userId = new UserId(Guid.NewGuid().ToString("D"));
             var title = new TodoTitle("タイトル");
             var description = new TodoDescription("詳細");
-
+            var beginDateTime = DateTime.Now;
+            var dueDateTime = beginDateTime.AddDays(7);
             var operationDateTime = DateTime.Now;
             
             // 実行
             var todo = Todo.CreateNew(
                 title: title,
                 description: description,
+                beginDateTime: beginDateTime,
+                dueDateTime: dueDateTime,
                 ownerId: userId);
 
             // 検証
             Assert.That(todo.Title, Is.EqualTo(title));
             Assert.That(todo.Description, Is.EqualTo(description));
+            Assert.That(todo.BeginDateTime, Is.EqualTo(beginDateTime));
+            Assert.That(todo.DueDateTime, Is.EqualTo(dueDateTime));
             Assert.That(todo.OwnerId, Is.EqualTo(userId));
             Assert.That(todo.CreatedDateTime, Is.InRange(operationDateTime, operationDateTime.AddSeconds(10)));
             Assert.That(todo.UpdatedDateTime, Is.InRange(operationDateTime, operationDateTime.AddSeconds(10)));
@@ -46,7 +51,8 @@ namespace Test.Domain.Models.Todos
             var userId = new UserId(Guid.NewGuid().ToString("D"));
             var title = new TodoTitle("タイトル");
             var description = new TodoDescription("詳細");
-
+            var beginDateTime = DateTime.Now;
+            var dueDateTime = beginDateTime.AddDays(7);
             var createdDateTime = DateTime.Now;
             var updatedDateTime = DateTime.Now.AddDays(1);
 
@@ -55,6 +61,8 @@ namespace Test.Domain.Models.Todos
                 id: todoId,
                 title: title,
                 description: description,
+                beginDateTime: beginDateTime,
+                dueDateTime: dueDateTime,
                 ownerId: userId,
                 createdDateTime: createdDateTime,
                 updatedDateTime: updatedDateTime,
@@ -71,6 +79,20 @@ namespace Test.Domain.Models.Todos
             Assert.That(todo.Status, Is.EqualTo(TodoStatus.完了));
             Assert.That(todo.IsDeleted, Is.False);
             Assert.That(todo.DeletedDateTime, Is.Null);
+        }
+
+        [Test]
+        public void 開始日を期日より後ろに設定して作成しようとすると例外が発生する()
+        {
+            // 実行・検証
+            Assert.That(
+                () => Todo.CreateNew(
+                    title: new TodoTitle("タイトル"),
+                    description: new TodoDescription("詳細"),
+                    beginDateTime: DateTime.Now.AddDays(7),
+                    dueDateTime: DateTime.Now,
+                    ownerId: new UserId(Guid.NewGuid().ToString("D"))),
+                Throws.TypeOf<DomainException>());
         }
 
         #endregion
@@ -131,21 +153,31 @@ namespace Test.Domain.Models.Todos
         #region Edit
 
         [Test]
-        public void 引数にタイトルと詳細を渡して編集する()
+        public void 引数にタイトルや詳細などを渡して編集する()
         {
             // 準備
             var todo = TodoGenerator.Generate(
                 title: "タイトル",
-                description: "説明文");
+                description: "説明文",
+                beginDateTime: DateTime.Now,
+                dueDateTime: DateTime.Now.AddDays(7));
             var newTitle = new TodoTitle("新しいタイトル");
             var newDescription = new TodoDescription("新しい説明文");
+            var newBeginDateTime = DateTime.Now.AddMonths(1);
+            var newDueDateTime = DateTime.Now.AddMonths(1).AddDays(7);
 
             // 実行
-            todo.Edit(newTitle, newDescription);
+            todo.Edit(
+                title: newTitle, 
+                description: newDescription, 
+                beginDateTime: newBeginDateTime, 
+                dueDateTime: newDueDateTime);
 
             // 検証
             Assert.That(todo.Title, Is.EqualTo(newTitle));
             Assert.That(todo.Description, Is.EqualTo(newDescription));
+            Assert.That(todo.BeginDateTime, Is.EqualTo(newBeginDateTime));
+            Assert.That(todo.DueDateTime, Is.EqualTo(newDueDateTime));
         }
 
         [Test]
@@ -155,13 +187,44 @@ namespace Test.Domain.Models.Todos
             var todo = TodoGenerator.Generate(
                 title: "タイトル",
                 description: "説明文",
+                beginDateTime: DateTime.Now,
+                dueDateTime: DateTime.Now.AddDays(7),
                 isDeleted: true);
             var newTitle = new TodoTitle("新しいタイトル");
             var newDescription = new TodoDescription("新しい説明文");
+            var newBeginDateTime = DateTime.Now.AddMonths(1);
+            var newDueDateTime = DateTime.Now.AddMonths(1).AddDays(7);
 
             // 実行・検証
             Assert.That(
-                () => todo.Edit(newTitle, newDescription),
+                () => todo.Edit(title: newTitle,
+                    description: newDescription,
+                    beginDateTime: newBeginDateTime,
+                    dueDateTime: newDueDateTime),
+                Throws.TypeOf<DomainException>());
+        }
+
+        [Test]
+        public void 開始日を期日より後ろに設定して編集しようとすると例外が発生する()
+        {
+            // 準備
+            var todo = TodoGenerator.Generate(
+                title: "タイトル",
+                description: "説明文",
+                beginDateTime: DateTime.Now,
+                dueDateTime: DateTime.Now.AddDays(7));
+            var newTitle = new TodoTitle("新しいタイトル");
+            var newDescription = new TodoDescription("新しい説明文");
+            var newBeginDateTime = DateTime.Now.AddDays(7);
+            var newDueDateTime = DateTime.Now;
+
+            // 実行・検証
+            Assert.That(
+                () => todo.Edit(
+                    title: newTitle,
+                    description: newDescription,
+                    beginDateTime: newBeginDateTime,
+                    dueDateTime: newDueDateTime),
                 Throws.TypeOf<DomainException>());
         }
 

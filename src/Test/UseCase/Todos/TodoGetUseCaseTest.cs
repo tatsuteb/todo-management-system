@@ -39,6 +39,8 @@ namespace Test.UseCase.Todos
             Assert.That(result.Todo.Id, Is.EqualTo(todo.Id.Value));
             Assert.That(result.Todo.Title, Is.EqualTo(todo.Title.Value));
             Assert.That(result.Todo.Description, Is.EqualTo(todo.Description?.Value));
+            Assert.That(result.Todo.BeginDateTime, Is.EqualTo(todo.BeginDateTime));
+            Assert.That(result.Todo.DueDateTime, Is.EqualTo(todo.DueDateTime));
             Assert.That(result.Todo.CreatedDateTime, Is.EqualTo(todo.CreatedDateTime));
             Assert.That(result.Todo.Status, Is.EqualTo((int) todo.Status));
             Assert.That(result.Todo.StatusName, Is.EqualTo(todo.Status.ToString()));

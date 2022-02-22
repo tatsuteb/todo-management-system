@@ -46,6 +46,8 @@ namespace Infrastructure.Todos
                     .Select(x => new TodoSummaryData(
                         id: x.Id,
                         title: x.Title,
+                        beginDateTime: x.BeginDateTime,
+                        dueDateTime: x.DueDateTime,
                         createdDateTime: x.CreatedDateTime,
                         updatedDateTime: x.UpdatedDateTime,
                         statusString: ((TodoStatus)x.Status).ToString())),

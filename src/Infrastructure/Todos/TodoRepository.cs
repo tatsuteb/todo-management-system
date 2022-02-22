@@ -75,6 +75,8 @@ namespace Infrastructure.Todos
             todoDataModel.Id = todo.Id.Value;
             todoDataModel.Title= todo.Title.Value;
             todoDataModel.Description = todo.Description?.Value;
+            todoDataModel.BeginDateTime = todo.BeginDateTime;
+            todoDataModel.DueDateTime = todo.DueDateTime;
             todoDataModel.OwnerId = todo.OwnerId.Value;
             todoDataModel.CreatedDateTime = todo.CreatedDateTime;
             todoDataModel.UpdatedDateTime = todo.UpdatedDateTime;
@@ -92,6 +94,8 @@ namespace Infrastructure.Todos
                     Id = todo.Id.Value,
                     Title = todo.Title.Value,
                     Description = todo.Description?.Value,
+                    BeginDateTime = todo.BeginDateTime,
+                    DueDateTime = todo.DueDateTime,
                     OwnerId = todo.OwnerId.Value,
                     CreatedDateTime = todo.CreatedDateTime,
                     UpdatedDateTime = todo.UpdatedDateTime,
@@ -123,6 +127,8 @@ namespace Infrastructure.Todos
                 description: !string.IsNullOrWhiteSpace(todoDataModel.Description)
                     ? new TodoDescription(todoDataModel.Description)
                     : null,
+                beginDateTime: todoDataModel.BeginDateTime,
+                dueDateTime: todoDataModel.DueDateTime,
                 ownerId: new UserId(todoDataModel.OwnerId),
                 createdDateTime: todoDataModel.CreatedDateTime,
                 updatedDateTime: todoDataModel.UpdatedDateTime,

@@ -33,7 +33,9 @@ namespace UseCase.Todos.Edit
                 title: new TodoTitle(command.Title),
                 description: !string.IsNullOrWhiteSpace(command.Description)
                     ? new TodoDescription(command.Description)
-                    : null);
+                    : null,
+                beginDateTime: command.BeginDateTime,
+                dueDateTime: command.DueDateTime);
 
             await _todoRepository.SaveAsync(todo);
 

@@ -8,17 +8,23 @@ namespace UseCase.Todos.Edit
         public string Id { get; }
         public string Title { get; }
         public string? Description { get; }
+        public DateTime? BeginDateTime { get; }
+        public DateTime? DueDateTime { get; }
 
         public TodoEditCommand(
             UserSession userSession, 
             string id, 
             string title, 
-            string? description)
+            string? description,
+            DateTime? beginDateTime,
+            DateTime? dueDateTime)
         {
             UserSession = userSession;
             Id = id;
             Title = title;
             Description = description;
+            BeginDateTime = beginDateTime;
+            DueDateTime = dueDateTime;
         }
     }
 }

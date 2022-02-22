@@ -27,12 +27,16 @@ namespace Test.UseCase.Todos
             var userId = Guid.NewGuid().ToString("D");
             const string title = "タイトル";
             const string description = "詳細";
+            var beginDateTime = DateTime.Now;
+            var dueDateTime = DateTime.Now.AddDays(7);
 
             // 実行
             var command = new TodoCreateCommand(
                 userSession: new UserSession(userId),
                 title: title,
-                description: description);
+                description: description,
+                beginDateTime: beginDateTime,
+                dueDateTime: dueDateTime);
             var result = await _todoCreateUseCase.ExecuteAsync(command);
 
             // 検証

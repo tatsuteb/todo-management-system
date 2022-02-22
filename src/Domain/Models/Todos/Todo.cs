@@ -8,6 +8,8 @@ namespace Domain.Models.Todos
         public TodoId Id { get; }
         public TodoTitle Title { get; private set; }
         public TodoDescription? Description { get; private set; }
+        public DateTime? BeginDateTime { get; private set; }
+        public DateTime? DueDateTime { get; private set; }
         public UserId OwnerId { get; }
         public DateTime CreatedDateTime { get; }
         public DateTime UpdatedDateTime { get; private set; }
@@ -18,7 +20,9 @@ namespace Domain.Models.Todos
         private Todo(
             TodoId id, 
             TodoTitle title, 
-            TodoDescription? description, 
+            TodoDescription? description,
+            DateTime? beginDateTime,
+            DateTime? dueDateTime,
             UserId ownerId, 
             DateTime createdDateTime, 
             DateTime updatedDateTime, 
@@ -29,6 +33,8 @@ namespace Domain.Models.Todos
             Id = id;
             Title = title;
             Description = description;
+            BeginDateTime = beginDateTime;
+            DueDateTime = dueDateTime;
             OwnerId = ownerId;
             CreatedDateTime = createdDateTime;
             UpdatedDateTime = updatedDateTime;
@@ -40,14 +46,23 @@ namespace Domain.Models.Todos
         public static Todo CreateNew(
             TodoTitle title,
             TodoDescription? description,
+            DateTime? beginDateTime,
+            DateTime? dueDateTime,
             UserId ownerId)
         {
             var operationDateTime = DateTime.Now;
             
+            if (beginDateTime > dueDateTime)
+            {
+                throw new DomainException("開始日は期日より前になるように設定してください。");
+            }
+
             return new Todo(
                 id: TodoId.Generate(),
                 title: title ?? throw new DomainException("タイトルを設定してください。"),
                 description: description,
+                beginDateTime: beginDateTime,
+                dueDateTime: dueDateTime,
                 ownerId: ownerId,
                 createdDateTime: operationDateTime,
                 updatedDateTime: operationDateTime,
@@ -60,6 +75,8 @@ namespace Domain.Models.Todos
             TodoId id,
             TodoTitle title,
             TodoDescription? description,
+            DateTime? beginDateTime,
+            DateTime? dueDateTime,
             UserId ownerId,
             DateTime createdDateTime,
             DateTime updatedDateTime,
@@ -71,6 +88,8 @@ namespace Domain.Models.Todos
                 id: id,
                 title: title,
                 description: description,
+                beginDateTime: beginDateTime,
+                dueDateTime: dueDateTime,
                 ownerId: ownerId,
                 createdDateTime: createdDateTime,
                 updatedDateTime: updatedDateTime,
@@ -106,15 +125,26 @@ namespace Domain.Models.Todos
             DeletedDateTime = DateTime.Now;
         }
 
-        public void Edit(TodoTitle title, TodoDescription? description)
+        public void Edit(
+            TodoTitle title,
+            TodoDescription? description,
+            DateTime? beginDateTime,
+            DateTime? dueDateTime)
         {
             if (IsDeleted)
             {
                 throw new DomainException("削除したTODOを編集することはできません。");
             }
 
+            if (beginDateTime > dueDateTime)
+            {
+                throw new DomainException("開始日は期日より前になるように設定してください。");
+            }
+
             Title = title ?? throw new DomainException("タイトルを設定してください。");
             Description = description;
+            BeginDateTime = beginDateTime;
+            DueDateTime = dueDateTime;
             UpdatedDateTime = DateTime.Now;
         }
     }
