@@ -1,6 +1,5 @@
-﻿using System.Net;
+﻿using Domain.Models.Todos;
 using System.Transactions;
-using Domain.Models.Todos;
 using UseCase.Shared;
 
 namespace UseCase.Todos.UpdateStatus
@@ -18,33 +17,23 @@ namespace UseCase.Todos.UpdateStatus
         {
             using var ts = new TransactionScope();
 
-            try
+            var todo = await _todoRepository.FindAsync(new TodoId(command.Id));
+
+            if (todo == null)
             {
-                var todo = await _todoRepository.FindAsync(new TodoId(command.Id));
-
-                if (todo == null)
-                {
-                    throw new UseCaseException("指定されたTODOが見つかりません。");
-                }
-
-                if (todo.OwnerId.Value != command.UserSession.Id)
-                {
-                    throw new UseCaseException("指定されたTODOのステータスを更新する権限がありません。");
-                }
-
-                todo.UpdateStatus((TodoStatus) command.Status);
-
-                await _todoRepository.SaveAsync(todo);
-
-                ts.Complete();
+                throw new UseCaseException("指定されたTODOが見つかりません。");
             }
-            catch (Exception e)
+
+            if (todo.OwnerId.Value != command.UserSession.Id)
             {
-                ts.Dispose();
-
-                Console.WriteLine(e);
-                throw new UseCaseException("TODOステータスの更新に失敗しました。", (int)HttpStatusCode.InternalServerError);
+                throw new UseCaseException("指定されたTODOのステータスを更新する権限がありません。");
             }
+
+            todo.UpdateStatus((TodoStatus) command.Status);
+
+            await _todoRepository.SaveAsync(todo);
+
+            ts.Complete();
         }
     }
 }
