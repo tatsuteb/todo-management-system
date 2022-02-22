@@ -15,6 +15,12 @@ namespace Infrastructure.DataModels.Todos
         [StringLength(maximumLength: TodoDescription.MaxTodoDescriptionLength)]
         public string? Description { get; set; }
 
+        [DataType(DataType.DateTime)]
+        public DateTime? BeginDateTime { get; set; }
+        
+        [DataType(DataType.DateTime)]
+        public DateTime? DueDateTime { get; set; }
+
         [Required]
         public string OwnerId { get; set; }
 
