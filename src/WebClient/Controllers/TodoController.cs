@@ -89,6 +89,8 @@ namespace WebClient.Controllers
 
                     viewModel.TodoDetailsViewModel.Id = getResult.Todo.Id;
                     viewModel.TodoDetailsViewModel.Title = getResult.Todo.Title;
+                    viewModel.TodoDetailsViewModel.BeginDateTime = getResult.Todo.BeginDateTime;
+                    viewModel.TodoDetailsViewModel.DueDateTime = getResult.Todo.DueDateTime;
                     viewModel.TodoDetailsViewModel.Description = getResult.Todo.Description;
                     viewModel.TodoDetailsViewModel.Status = getResult.Todo.Status;
                     viewModel.TodoDetailsViewModel.CreatedDateTime = getResult.Todo.CreatedDateTime;
@@ -118,7 +120,9 @@ namespace WebClient.Controllers
                     var createCommand = new TodoCreateCommand(
                         userSession: new UserSession(userId),
                         title: viewModel.PostInputModel.Title ?? "",
-                        description: viewModel.PostInputModel.Description);
+                        description: viewModel.PostInputModel.Description,
+                        beginDateTime: viewModel.PostInputModel.BeginDateTime,
+                        dueDateTime: viewModel.PostInputModel.DueDateTime);
                     await _todoCreateUseCase.ExecuteAsync(createCommand);
                 }
                 else
@@ -127,7 +131,9 @@ namespace WebClient.Controllers
                         userSession: new UserSession(userId),
                         id: viewModel.Id,
                         title: viewModel.PostInputModel.Title,
-                        description: viewModel.PostInputModel.Description);
+                        description: viewModel.PostInputModel.Description,
+                        beginDateTime: viewModel.PostInputModel.BeginDateTime,
+                        dueDateTime: viewModel.PostInputModel.DueDateTime);
                     await _todoEditUseCase.ExecuteAsync(editCommand);
 
                     var postStatus = viewModel.PostInputModel.IsComplete ? (int)TodoStatus.完了 : (int)TodoStatus.未完了;

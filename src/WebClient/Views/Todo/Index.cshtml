@@ -44,6 +44,21 @@
                             <input asp-for="PostInputModel.Title" class="form-control" placeholder="TODOのタイトルを入力してください"/>
                             <label asp-for="PostInputModel.Title">タイトル</label>
                         </div>
+                        
+                        <div class="row g-2 mb-3">
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input asp-for="PostInputModel.BeginDateTime" class="form-control"/>
+                                    <label asp-for="PostInputModel.BeginDateTime">開始日（オプション）</label>
+                                </div>
+                            </div>
+                            <div class="col-md">
+                                <div class="form-floating">
+                                    <input asp-for="PostInputModel.DueDateTime" class="form-control"/>
+                                    <label asp-for="PostInputModel.DueDateTime">期日（オプション）</label>
+                                </div>
+                            </div>
+                        </div>
 
                         <div>
                             <a class="link-dark" data-bs-toggle="collapse" href="#collapseDescription" role="button" aria-expanded="false" aria-controls="collapseDescription">
@@ -119,7 +134,7 @@
                                 <input type="checkbox" asp-for="CompleteInputModel.IsComplete" checked="@isSummaryComplete" data-form="completeTodoForm_@todoSummary.Id" onchange="submit()"/>
                             </form>
 
-                            <div class="ms-3">
+                            <div class="d-flex ms-3">
                                 @{
                                     var detailsQueries = new Dictionary<string, string>(queries);
                                     if (detailsQueries.ContainsKey(nameof(Model.Id)))
@@ -131,7 +146,23 @@
                                         detailsQueries.Add(nameof(Model.Id), todoSummary.Id);
                                     }
                                 }
-                                <a asp-action="Index" asp-all-route-data="@detailsQueries" class="link-dark text-decoration-none">@todoSummary.Title</a>
+                                <div style="width: 200px;">
+                                    <a asp-action="Index" asp-all-route-data="@detailsQueries" class="link-dark text-decoration-none">@todoSummary.Title</a>
+                                </div>
+                                @if (todoSummary.BeginDateTime is null && todoSummary.DueDateTime is null)
+                                {
+                                    <div style="width: 210px; text-align: center;">-</div>
+                                }
+                                else
+                                {
+                                    <div style="width: 210px;">
+                                        <div class="row g-2">
+                                            <div class="col-auto" style="min-width: 90px;text-align: right">@(todoSummary.BeginDateTime?.ToString("yyyy/MM/dd") ?? "-")</div>
+                                            <div class="col-auto"><i class="bi bi-arrow-right"></i></div>
+                                            <div class="col-auto" style="min-width: 90px;text-align: left">@(todoSummary.DueDateTime?.ToString("yyyy/MM/dd") ?? "-")</div>
+                                        </div>
+                                    </div>
+                                }
                             </div>
                         </div>
 
@@ -229,6 +260,21 @@
                 <div class="form-floating">
                     <input asp-for="PostInputModel.Title" class="form-control" placeholder="TODOのタイトルを入力してください" value="@Model.TodoDetailsViewModel.Title"/>
                     <label>タイトル</label>
+                </div>
+                
+                <div class="row g-2 mt-3">
+                    <div class="col-md">
+                        <div class="form-floating">
+                            <input asp-for="PostInputModel.BeginDateTime" class="form-control" value="@Model.TodoDetailsViewModel.BeginDateTime?.ToString("s")"/>
+                            <label asp-for="PostInputModel.BeginDateTime">開始日（オプション）</label>
+                        </div>
+                    </div>
+                    <div class="col-md">
+                        <div class="form-floating">
+                            <input asp-for="PostInputModel.DueDateTime" class="form-control" value="@Model.TodoDetailsViewModel.DueDateTime?.ToString("s")"/>
+                            <label asp-for="PostInputModel.DueDateTime">期日（オプション）</label>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="form-floating mt-3">
